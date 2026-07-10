@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>会员储值消费订单明细</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f8f7;
+      --panel: #ffffff;
+      --text: #16231f;
+      --muted: #60756f;
+      --line: #d8e5e1;
+      --soft: #edf6f3;
+      --accent: #087d6a;
+      --accent-strong: #0b5f52;
+      --good: #166534;
+      --bad: #b42318;
+      --warn: #9a5b00;
+      --shadow: 0 10px 26px rgba(22, 35, 31, 0.07);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    header {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbfa 100%);
+      border-bottom: 1px solid var(--line);
+      padding: 18px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .header-brand h1 { font-size: 21px; margin: 0 0 4px; }
+    .subtitle { color: var(--muted); margin: 0; }
+
+    .header-nav {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .auth-status {
+      align-items: center;
+      color: var(--good);
+      display: flex;
+      font-size: 13px;
+      gap: 6px;
+    }
+    .auth-status.inactive { color: var(--muted); }
+
+    .status-dot {
+      background: var(--muted);
+      border-radius: 50%;
+      height: 8px;
+      width: 8px;
+    }
+    .status-dot.ok { background: var(--good); }
+
+    main {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      padding: 18px 28px 28px;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      align-self: start;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      position: sticky;
+      top: 88px;
+    }
+
+    .content { display: grid; gap: 16px; min-width: 0; }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-width: 0;
+    }
+
+    h2 { font-size: 16px; margin: 0 0 12px; }
+
+    label {
+      color: var(--muted);
+      display: grid;
+      font-size: 12px;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    input, select {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      font: inherit;
+      padding: 9px 10px;
+      width: 100%;
+    }
+    input:focus, select:focus {
+      border-color: #79b9ad;
+      box-shadow: 0 0 0 3px rgba(8, 125, 106, 0.12);
+      outline: none;
+    }
+
+    .grid-2 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      min-height: 36px;
+      padding: 8px 12px;
+      white-space: nowrap;
+    }
+    .primary { background: var(--accent); color: #fff; }
+    .primary:hover { background: var(--accent-strong); }
+    .secondary { background: #fff; border-color: var(--line); color: var(--text); }
+    button:disabled { cursor: not-allowed; opacity: 0.62; }
+
+    .auth-card {
+      background: var(--soft);
+      border: 1px solid #cbe1dc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+    }
+    .auth-card button { width: 100%; }
+    .auth-card p { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+
+    .status {
+      background: #f4fbf9;
+      border: 1px solid #b9d9d2;
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      color: #255b52;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+    }
+    .status.error {
+      background: #fff1f0;
+      border-color: #ffd0d0;
+      border-left-color: var(--bad);
+      color: var(--bad);
+    }
+    .status.good {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      border-left-color: var(--good);
+      color: var(--good);
+    }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .summary-card {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .summary-card .label { color: var(--muted); font-size: 12px; }
+    .summary-card .value { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--accent-strong); }
+
+    /* Table */
+    .section-title {
+      align-items: baseline;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-title h2 { margin: 0; }
+    .section-title span { color: var(--muted); font-size: 12px; }
+
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      max-height: 600px;
+      overflow: auto;
+      width: 100%;
+    }
+
+    table {
+      background: #fff;
+      border-collapse: collapse;
+      min-width: 900px;
+      width: 100%;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f1f7f5;
+      color: #31524c;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td { font-size: 13px; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.neg { color: var(--bad); }
+    td.pos { color: var(--good); }
+
+    .table-count { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--muted);
+      padding: 24px;
+    }
+
+    details { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+    summary {
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .member-search-result {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 10px;
+      padding: 10px 12px;
+    }
+    .member-search-result .member-name { font-weight: 600; }
+    .member-search-result .member-mobile { color: var(--muted); }
+    .member-search-result .member-balance { color: var(--accent-strong); font-weight: 700; }
+
+    .charge-row { background: #f0fdf4; }
+    .member-link {
+      background: none;
+      border: 0;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; padding: 12px; }
+      aside { position: static; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .summary-grid { grid-template-columns: 1fr; }
+      header { padding: 14px 12px; }
+      .header-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-brand">
+      <h1>会员储值消费订单明细</h1>
+      <p class="subtitle">查询储值余额 Top 50 且充值总额 > 0 的会员消费记录，按时间倒序</p>
+    </div>
+    <div class="header-nav">
+      <span id="headerAuthStatus" class="auth-status inactive"><span class="status-dot"></span>未导入授权</span>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <h2>查询条件</h2>
+
+      <div class="auth-card">
+        <button id="importAuth" class="secondary" type="button">从插件导入运营后台授权</button>
+        <p id="authState">未导入授权</p>
+      </div>
+
+      <label>会员手机号 / 姓名（可选，不填则查全部有储值会员）
+        <input id="memberSearch" placeholder="输入手机号或姓名搜索">
+      </label>
+
+      <label>消费日期范围（可选）
+        <div class="grid-2">
+          <input id="dateFrom" type="date" placeholder="开始日期">
+          <input id="dateTo" type="date" placeholder="结束日期">
+        </div>
+      </label>
+
+      <label>每个会员最多获取消费记录条数
+        <input id="logPageSize" type="number" min="1" max="200" value="50">
+      </label>
+
+      <div class="actions">
+        <button id="queryBtn" class="primary">开始查询</button>
+      </div>
+
+      <div id="memberInfo" class="member-search-result" style="display:none">
+        <div></div>
+      </div>
+
+      <details>
+        <summary>高级设置（可选）</summary>
+        <label>Bearer Token
+          <input id="authorization" autocomplete="off" spellcheck="false" placeholder="插件导入失败时手动粘贴">
+        </label>
+        <label>Cookie（可选）
+          <input id="cookie" autocomplete="off" spellcheck="false" placeholder="手动粘贴浏览器 Cookie">
+        </label>
+        <div class="grid-2">
+          <label>App ID
+            <input id="appid" value="cli_a222ece4c4b8500d">
+          </label>
+          <label>Brand ID
+            <input id="brandid" value="1">
+          </label>
+        </div>
+        <label>Shop Header ID
+          <input id="shopHeaderId" value="0">
+        </label>
+      </details>
+
+      <div id="memberSearchResults" style="margin-top:10px;"></div>
+    </aside>
+
+    <div class="content">
+      <div id="status" class="status">先在 b.kuafood.com 登录后点击插件导入授权，再点击「开始查询」查看消费记录。</div>
+
+      <section id="summarySection" style="display:none">
+        <h2>消费概览</h2>
+        <div id="summaryCards" class="summary-grid"></div>
+      </section>
+
+      <section>
+        <div class="section-title">
+          <h2>消费记录明细</h2>
+          <span id="tableInfo">按消费时间倒序排列</span>
+        </div>
+        <div id="tableCount" class="table-count"></div>
+        <div id="tableArea" class="table-wrap">
+          <div class="empty-state">点击「开始查询」获取数据</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function updateHeaderAuthStatus(isAuthorized) {
+      const el = $('headerAuthStatus');
+      const dot = el.querySelector('.status-dot');
+      el.classList.toggle('inactive', !isAuthorized);
+      if (dot) dot.classList.toggle('ok', isAuthorized);
+      el.lastChild.textContent = isAuthorized ? '已导入夸父运营后台授权' : '未导入授权';
+    }
+
+    function setStatus(message, type = '') {
+      const el = $('status');
+      el.textContent = message;
+      el.className = `status ${type}`.trim();
+    }
+
+    function setBusy(isBusy) {
+      $('queryBtn').disabled = isBusy;
+      $('queryBtn').textContent = isBusy ? '查询中...' : '开始查询';
+    }
+
+    function requestHeaders(config) {
+      return {
+        authorization: config.authorization,
+        cookie: config.cookie,
+        appid: config.appid,
+        brandid: config.brandid,
+        shopid: config.shopHeaderId,
+      };
+    }
+
+    function getConfig() {
+      return {
+        authorization: $('authorization').value.trim(),
+        cookie: $('cookie').value.trim(),
+        appid: $('appid').value.trim(),
+        brandid: $('brandid').value.trim(),
+        shopHeaderId: $('shopHeaderId').value.trim() || '0',
+        memberSearch: $('memberSearch').value.trim(),
+        dateFrom: $('dateFrom').value,
+        dateTo: $('dateTo').value,
+        logPageSize: Number($('logPageSize').value || 50),
+      };
+    }
+
+    // Rate limiter: max 3 concurrent, 350ms interval
+    function createRateLimiter({ maxConcurrent = 3, minIntervalMs = 350 } = {}) {
+      let active = 0;
+      let lastDispatch = 0;
+      const queue = [];
+      const pump = () => {
+        if (!queue.length || active >= maxConcurrent) return;
+        const now = Date.now();
+        const wait = Math.max(0, lastDispatch + minIntervalMs - now);
+        if (wait > 0) { setTimeout(pump, wait); return; }
+        const item = queue.shift();
+        active += 1;
+        lastDispatch = Date.now();
+        Promise.resolve().then(item.task).then(item.resolve, item.reject)
+          .finally(() => { active -= 1; pump(); });
+        pump();
+      };
+      return {
+        run(task) {
+          return new Promise((resolve, reject) => {
+            queue.push({ task, resolve, reject });
+            pump();
+          });
+        },
+      };
+    }
+    const apiLimiter = createRateLimiter();
+
+    async function callKuafood(target, payload) {
+      return apiLimiter.run(async () => {
+        const response = await fetch('/api/kuafood', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ target, ...payload }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+          throw new Error(`${target} 请求失败：${data.message || data.status || response.status}`);
+        }
+        const upstream = data.data;
+        if (upstream && typeof upstream === 'object' && upstream.code && upstream.code !== 200) {
+          throw new Error(`${target} 上游错误[${upstream.code}]：${upstream.msg || upstream.message || '未知错误'}`);
+        }
+        return data.data;
+      });
+    }
+
+    function unwrapPayload(response) {
+      if (!response || typeof response !== 'object') return response;
+      return response.data && typeof response.data === 'object' ? response.data : response;
+    }
+
+    function findRows(response) {
+      const root = unwrapPayload(response);
+      const candidates = [
+        root?.records, root?.list, root?.lists, root?.rows, root?.items, root?.data,
+        root?.data?.records, root?.data?.list, root?.data?.lists,
+        root?.data?.rows, root?.data?.items,
+        root?.page?.records, root?.page?.list, root?.page?.lists,
+        root?.page?.rows, root?.page?.items,
+        root?.result?.records, root?.result?.list, root?.result?.lists,
+        root?.result?.rows, root?.result?.items, root?.result?.data,
+      ];
+      for (const candidate of candidates) {
+        if (Array.isArray(candidate)) return candidate;
+      }
+      if (Array.isArray(root)) return root;
+      return [];
+    }
+
+    function findTotal(response, pageSize) {
+      const root = unwrapPayload(response);
+      const totalObjCount = [
+        root?.total?.count, root?.total?.totalCount, root?.total?.total,
+        root?.data?.total?.count, root?.data?.total?.totalCount, root?.data?.total?.total,
+      ];
+      for (const tc of totalObjCount) {
+        const n = Number(tc);
+        if (Number.isFinite(n) && n > 0) return n;
+      }
+      const candidates = [
+        root?.total, root?.totalCount, root?.totalNum, root?.count,
+        root?.recordsTotal, root?.totalRow, root?.totalSize,
+        root?.totalElements, root?.totalRows, root?.itemCount,
+        root?.page?.total, root?.page?.totalCount, root?.page?.count,
+        root?.data?.count, root?.data?.total, root?.data?.totalCount,
+        root?.result?.total, root?.result?.totalCount,
+        root?.pagination?.total, root?.pagination?.totalCount,
+      ];
+      for (const candidate of candidates) {
+        const n = Number(candidate);
+        if (Number.isFinite(n) && n > 0) return n;
+      }
+      return 0;
+    }
+
+    async function importAuthFromServer() {
+      let response;
+      try {
+        response = await fetch('/api/auth-state');
+      } catch (networkError) {
+        const msg = `连不到本地服务 127.0.0.1:8766，请确认已运行 node kuafood-member-prepaid-server.mjs。(${networkError instanceof Error ? networkError.message : String(networkError)})`;
+        throw new Error(msg);
+      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
+      if (!data.hasAuth) {
+        throw new Error('还没有插件导入的授权。请先打开 b.kuafood.com 后台并点击 Chrome 插件导入授权。');
+      }
+      $('authorization').value = data.token || '';
+      $('cookie').value = data.cookie || '';
+      $('authState').textContent = `已导入：${data.importedAt || ''}${data.tokenSource ? `（${data.tokenSource}）` : ''}`;
+      updateHeaderAuthStatus(true);
+      setStatus(`授权已导入。来源：${data.sourceUrl || '未知'}；Token 来源：${data.tokenSource || '未识别'}`, 'good');
+    }
+
+    // ===== Query Logic =====
+
+    async function fetchMemberList(config, pageNum = 1, pageSize = 200) {
+      const query = { pageSize, pageNum, sortField: 'totalBalance', sortOrder: 'desc' };
+      if (config.memberSearch) {
+        // Try searching by mobile
+        if (/^\d{6,15}$/.test(config.memberSearch)) {
+          query.mobile = config.memberSearch;
+        } else {
+          query.name = config.memberSearch;
+        }
+      }
+      const response = await callKuafood('customerList', {
+        headers: requestHeaders(config),
+        query,
+      });
+      return response;
+    }
+
+    async function fetchPrePaidLogs(config, customerId, pageNum = 1) {
+      const pageSize = config.logPageSize;
+      const response = await callKuafood('prePaidLogs', {
+        headers: requestHeaders(config),
+        query: { type: 2, pageSize, pageNum },
+        path: { customerId: String(customerId) },
+      });
+      return response;
+    }
+
+    async function fetchCustomerDetail(config, customerId) {
+      const response = await callKuafood('customerDetail', {
+        headers: requestHeaders(config),
+        path: { customerId: String(customerId) },
+      });
+      return response;
+    }
+
+    async function queryAll(config) {
+      setBusy(true);
+      setStatus('正在查询有储值余额的会员列表...');
+      $('tableArea').innerHTML = '<div class="loading">查询中...</div>';
+      $('tableCount').textContent = '';
+      $('tableInfo').textContent = '按消费时间倒序排列';
+
+      try {
+        // Step 1: Get member list (paginated, all pages)
+        let allMembers = [];
+        let memberTotal = 0;
+        let memberPage = 1;
+        const MEMBER_PAGE_SIZE = 200;
+
+        while (true) {
+          const memberResponse = await fetchMemberList(config, memberPage, MEMBER_PAGE_SIZE);
+          const rows = findRows(memberResponse);
+          if (memberPage === 1) memberTotal = findTotal(memberResponse, MEMBER_PAGE_SIZE);
+          if (!rows.length) break;
+          allMembers.push(...rows);
+          setStatus(`已获取 ${allMembers.length} / ${memberTotal || '?'} 名会员...`);
+          if (rows.length < MEMBER_PAGE_SIZE) break;
+          if (allMembers.length >= 50) break; // Top 50 by balance
+          memberPage++;
+        }
+
+        // Filter: only members with totalCharge > 0
+        const beforeFilter = allMembers.length;
+        allMembers = allMembers.filter(m => Number(m.totalCharge) > 0);
+        setStatus(`已获取 ${beforeFilter} 名会员，其中 ${allMembers.length} 名有充值记录，正在查询消费记录...`);
+
+        if (!allMembers.length) {
+          setStatus(config.memberSearch ? `未找到匹配"${config.memberSearch}"且有充值记录的会员` : '未找到有充值记录的会员', 'error');
+          $('tableArea').innerHTML = '<div class="empty-state">无匹配结果</div>';
+          $('summarySection').style.display = 'none';
+          return;
+        }
+
+        // Step 2: For each member, fetch consumption logs (type=2)
+        const allLogs = [];
+        let processed = 0;
+
+        // Process members in batches to limit concurrency
+        const batchSize = 10;
+        for (let i = 0; i < allMembers.length; i += batchSize) {
+          const batch = allMembers.slice(i, i + batchSize);
+          const batchPromises = batch.map(async (member) => {
+            try {
+              const logsResponse = await fetchPrePaidLogs(config, member.id, 1);
+              const logs = findRows(logsResponse) || [];
+              // Attach member info to each log
+              return logs.map(log => ({
+                ...log,
+                memberId: member.id,
+                memberName: member.name || '',
+                memberMobile: member.mobile || '',
+                memberHeadImage: member.headImage || '',
+                memberTotalBalance: member.totalBalance || 0,
+                memberTotalCharge: member.totalCharge || 0,
+                memberCharge: member.charge || 0,
+                memberSend: member.send || 0,
+              }));
+            } catch (err) {
+              console.warn(`Failed to fetch logs for member ${member.id}:`, err.message);
+              return [];
+            }
+          });
+          const batchResults = await Promise.all(batchPromises);
+          for (const logs of batchResults) {
+            allLogs.push(...logs);
+          }
+          processed += batch.length;
+          setStatus(`已查询 ${processed} / ${allMembers.length} 名会员的消费记录（已获取 ${allLogs.length} 条）...`);
+        }
+
+        // Step 3: Filter by date range, sort by time descending
+        const dateFrom = config.dateFrom ? new Date(`${config.dateFrom}T00:00:00`) : null;
+        const dateTo = config.dateTo ? new Date(`${config.dateTo}T23:59:59`) : null;
+
+        let filteredLogs = allLogs.filter(log => {
+          if (!log.createdAt) return false;
+          const logDate = new Date(log.createdAt.replace(' ', 'T'));
+          if (isNaN(logDate.getTime())) return false;
+          if (dateFrom && logDate < dateFrom) return false;
+          if (dateTo && logDate > dateTo) return false;
+          return true;
+        });
+
+        // Sort by time descending
+        filteredLogs.sort((a, b) => {
+          const da = new Date(a.createdAt.replace(' ', 'T'));
+          const db = new Date(b.createdAt.replace(' ', 'T'));
+          return db - da;
+        });
+
+        // Calculate summary
+        const totalAmount = filteredLogs.reduce((sum, log) => sum + Math.abs(Number(log.chargeSend) || 0), 0);
+        const totalChargeConsumed = filteredLogs.reduce((sum, log) => sum + Math.abs(Number(log.charge) || 0), 0);
+        const totalSendConsumed = filteredLogs.reduce((sum, log) => sum + Math.abs(Number(log.send) || 0), 0);
+        const uniqueMembers = new Set(filteredLogs.map(l => l.memberId)).size;
+        const uniqueShops = new Set(filteredLogs.map(l => l.shopId).filter(Boolean)).size;
+
+        // Render
+        renderSummary({
+          totalRecords: filteredLogs.length,
+          totalAmount,
+          totalChargeConsumed,
+          totalSendConsumed,
+          uniqueMembers,
+          uniqueShops,
+          membersQueried: allMembers.length,
+        });
+
+        renderTable(filteredLogs);
+
+        setStatus(`查询完成：${allMembers.length} 名会员，${filteredLogs.length} 条消费记录`, 'good');
+        $('tableInfo').textContent =
+          `按消费时间倒序排列 | ${filteredLogs.length} 条记录 | ${uniqueMembers} 名会员 | ${uniqueShops} 家门店`;
+
+      } catch (error) {
+        setStatus(`查询出错：${error.message}`, 'error');
+        $('tableArea').innerHTML = `<div class="empty-state">错误：${error.message}</div>`;
+        $('summarySection').style.display = 'none';
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function renderSummary(stats) {
+      $('summarySection').style.display = 'block';
+      $('summaryCards').innerHTML = `
+        <div class="summary-card">
+          <div class="label">消费记录总数</div>
+          <div class="value">${stats.totalRecords.toLocaleString()}</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">消费总金额（含赠送）</div>
+          <div class="value" style="color:var(--bad)">-¥${(stats.totalAmount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">本金消耗 / 赠金消耗</div>
+          <div class="value">¥${(stats.totalChargeConsumed / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ¥${(stats.totalSendConsumed / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">涉及会员 / 门店</div>
+          <div class="value">${stats.uniqueMembers} / ${stats.uniqueShops}</div>
+        </div>
+      `;
+    }
+
+    function formatMoney(cents) {
+      const n = Number(cents) || 0;
+      const abs = Math.abs(n);
+      const sign = n < 0 ? '-' : n > 0 ? '+' : '';
+      const yuan = (abs / 100).toFixed(2);
+      return sign + '¥' + yuan;
+    }
+
+    function renderTable(logs) {
+      if (!logs.length) {
+        $('tableCount').textContent = '';
+        $('tableArea').innerHTML = '<div class="empty-state">无消费记录</div>';
+        return;
+      }
+
+      $('tableCount').textContent = `共 ${logs.length} 条消费记录（按时间倒序）`;
+
+      const rows = logs.map(log => {
+        const createdAt = log.createdAt || '';
+        const memberDisplay = log.memberName
+          ? `${log.memberName} <span style="color:var(--muted);font-size:12px;">${log.memberMobile}</span>`
+          : log.memberMobile || '';
+        const shopName = log.shopName || `门店${log.shopId || ''}`;
+        const chargeSend = Number(log.chargeSend) || 0;
+        const charge = Number(log.charge) || 0;
+        const send = Number(log.send) || 0;
+        const afterBalance = Number(log.afterChargeSend) || 0;
+        const orderId = log.orderId && Number(log.orderId) > 0 ? log.orderId : '';
+
+        return `
+          <tr>
+            <td style="white-space:nowrap;">${createdAt}</td>
+            <td>${memberDisplay}</td>
+            <td>${shopName}</td>
+            <td class="num neg">${formatMoney(chargeSend)}</td>
+            <td class="num neg">${formatMoney(charge)}</td>
+            <td class="num neg">${formatMoney(send)}</td>
+            <td class="num">${formatMoney(afterBalance)}</td>
+            <td style="font-size:12px;color:var(--muted);">${orderId}</td>
+          </tr>
+        `;
+      });
+
+      $('tableArea').innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>消费时间</th>
+              <th>会员</th>
+              <th>消费门店</th>
+              <th style="text-align:right">消费金额</th>
+              <th style="text-align:right">本金消耗</th>
+              <th style="text-align:right">赠金消耗</th>
+              <th style="text-align:right">消费后余额</th>
+              <th>订单ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.join('\n')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ===== Event Bindings =====
+    $('importAuth').addEventListener('click', async () => {
+      try {
+        await importAuthFromServer();
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
+    });
+
+    $('queryBtn').addEventListener('click', async () => {
+      const config = getConfig();
+      if (!config.authorization) {
+        setStatus('请先导入授权（从插件或手动粘贴 Bearer Token）', 'error');
+        return;
+      }
+      if (!config.appid) {
+        setStatus('请填写 App ID', 'error');
+        return;
+      }
+      await queryAll(config);
+    });
+
+    // Default today for dateTo
+    const today = new Date().toISOString().slice(0, 10);
+    if (!$('dateTo').value) $('dateTo').value = today;
+  </script>
+</body>
+</html>
