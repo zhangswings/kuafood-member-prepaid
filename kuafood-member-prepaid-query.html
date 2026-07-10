@@ -768,7 +768,7 @@
             <td class="num neg">${formatMoney(charge)}</td>
             <td class="num neg">${formatMoney(send)}</td>
             <td class="num">${formatMoney(afterBalance)}</td>
-            <td style="font-size:12px;color:var(--muted);">${orderId}</td>
+            <td style="font-size:12px;">${orderId ? `<a href="https://b.kuafood.com/operation/order/detail/${orderId}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${orderId}</a>` : ''}</td>
           </tr>
         `;
       });
