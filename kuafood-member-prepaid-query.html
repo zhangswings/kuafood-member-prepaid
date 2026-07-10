@@ -249,6 +249,43 @@
       padding: 24px;
     }
 
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pagination-info { flex-shrink: 0; }
+    .pagination-controls { display: flex; align-items: center; gap: 4px; }
+    .pagination-label { font-size: 13px; }
+    .page-size-select {
+      padding: 2px 6px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .pagination-btn {
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .pagination-btn:hover:not(:disabled) { background: var(--soft); }
+    .pagination-btn:disabled { opacity: 0.35; cursor: default; }
+    .pagination-current { font-size: 13px; padding: 0 4px; white-space: nowrap; }
+
     details { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
     summary {
       color: var(--accent);
@@ -738,7 +775,23 @@
       return sign + '¥' + yuan;
     }
 
+    let pagination = { pageSize: 20, currentPage: 1 };
+    let _allLogs = [];
+
     function renderTable(logs) {
+      _allLogs = logs;
+      pagination.currentPage = 1;
+      _renderPage();
+    }
+
+    function _renderPage() {
+      const logs = _allLogs;
+      const totalPages = Math.max(1, Math.ceil(logs.length / pagination.pageSize));
+      if (pagination.currentPage > totalPages) pagination.currentPage = totalPages;
+
+      const start = (pagination.currentPage - 1) * pagination.pageSize;
+      const pageLogs = logs.slice(start, start + pagination.pageSize);
+
       if (!logs.length) {
         $('tableCount').textContent = '';
         $('tableArea').innerHTML = '<div class="empty-state">无消费记录</div>';
@@ -747,7 +800,7 @@
 
       $('tableCount').textContent = `共 ${logs.length} 条消费记录（按时间倒序）`;
 
-      const rows = logs.map(log => {
+      const rows = pageLogs.map(log => {
         const createdAt = log.createdAt || '';
         const memberDisplay = log.memberName
           ? `${log.memberName} <span style="color:var(--muted);font-size:12px;">${log.memberMobile}</span>`
@@ -794,7 +847,44 @@
             ${rows.join('\n')}
           </tbody>
         </table>
+        ${_renderPagination(logs.length, start, pageLogs.length)}
       `;
+    }
+
+    function _renderPagination(total, start, pageCount) {
+      const totalPages = Math.ceil(total / pagination.pageSize);
+      const end = Math.min(start + pagination.pageSize, total);
+      const sizes = [10, 20, 50, 100];
+      return `
+        <div class="pagination">
+          <div class="pagination-info">第 ${start + 1}-${end} 条，共 ${total} 条</div>
+          <div class="pagination-controls">
+            <span class="pagination-label">每页</span>
+            <select class="page-size-select" onchange="changePageSize(this.value)">
+              ${sizes.map(s => `<option value="${s}" ${s === pagination.pageSize ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+            <span class="pagination-label">条</span>
+            <button class="pagination-btn" onclick="goToPage(1)" ${pagination.currentPage === 1 ? 'disabled' : ''}>«</button>
+            <button class="pagination-btn" onclick="goToPage(${pagination.currentPage - 1})" ${pagination.currentPage === 1 ? 'disabled' : ''}>‹</button>
+            <span class="pagination-current">${pagination.currentPage} / ${totalPages}</span>
+            <button class="pagination-btn" onclick="goToPage(${pagination.currentPage + 1})" ${pagination.currentPage === totalPages ? 'disabled' : ''}>›</button>
+            <button class="pagination-btn" onclick="goToPage(${totalPages})" ${pagination.currentPage === totalPages ? 'disabled' : ''}>»</button>
+          </div>
+        </div>`;
+    }
+
+    function goToPage(page) {
+      const totalPages = Math.ceil(_allLogs.length / pagination.pageSize);
+      if (page < 1 || page > totalPages) return;
+      pagination.currentPage = page;
+      _renderPage();
+      document.querySelector('.table-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function changePageSize(size) {
+      pagination.pageSize = Number(size);
+      pagination.currentPage = 1;
+      _renderPage();
     }
 
     // ===== Event Bindings =====
