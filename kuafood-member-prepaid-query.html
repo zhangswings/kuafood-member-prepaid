@@ -274,7 +274,8 @@
       gap: 8px;
     }
     .pagination-info { flex-shrink: 0; }
-    .pagination-controls { display: flex; align-items: center; gap: 4px; }
+    .pagination-controls { display: flex; align-items: center; gap: 8px; }
+    .page-size-group { display: inline-flex; align-items: center; gap: 0; font-size: 13px; }
     .pagination-label { font-size: 13px; }
     .page-size-select {
       padding: 2px 6px;
@@ -879,11 +880,11 @@
         <div class="pagination">
           <div class="pagination-info">第 ${start + 1}-${end} 条，共 ${total} 条</div>
           <div class="pagination-controls">
-            <span class="pagination-label">每页</span>
-            <select class="page-size-select" onchange="changePageSize(this.value)">
+            <span class="page-size-group">
+              每页<select class="page-size-select" onchange="changePageSize(this.value)">
               ${sizes.map(s => `<option value="${s}" ${s === pagination.pageSize ? 'selected' : ''}>${s}</option>`).join('')}
-            </select>
-            <span class="pagination-label">条</span>
+            </select>条
+            </span>
             <button class="pagination-btn" onclick="goToPage(1)" ${pagination.currentPage === 1 ? 'disabled' : ''}>«</button>
             <button class="pagination-btn" onclick="goToPage(${pagination.currentPage - 1})" ${pagination.currentPage === 1 ? 'disabled' : ''}>‹</button>
             <span class="pagination-current">${pagination.currentPage} / ${totalPages}</span>
