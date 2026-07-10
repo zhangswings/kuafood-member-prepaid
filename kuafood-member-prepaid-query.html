@@ -196,11 +196,24 @@
     }
     .section-title h2 { margin: 0; }
     .section-title span { color: var(--muted); font-size: 12px; }
+    .export-btn {
+      padding: 4px 12px;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+      display: none;
+    }
+    .export-btn:hover { background: var(--primary); color: #fff; }
+    .export-btn.visible { display: inline-block; }
 
     .table-wrap {
       border: 1px solid var(--line);
       border-radius: 8px;
-      max-height: 600px;
+      max-height: 900px;
       overflow: auto;
       width: 100%;
     }
@@ -407,8 +420,11 @@
 
       <section>
         <div class="section-title">
-          <h2>消费记录明细</h2>
-          <span id="tableInfo">按消费时间倒序排列</span>
+          <div style="display:flex;align-items:baseline;gap:10px;">
+            <h2>消费记录明细</h2>
+            <span id="tableInfo">按消费时间倒序排列</span>
+          </div>
+          <button id="exportBtn" class="export-btn" onclick="exportCSV()">导出 CSV</button>
         </div>
         <div id="tableCount" class="table-count"></div>
         <div id="tableArea" class="table-wrap">
@@ -623,6 +639,7 @@
       $('tableArea').innerHTML = '<div class="loading">查询中...</div>';
       $('tableCount').textContent = '';
       $('tableInfo').textContent = '按消费时间倒序排列';
+      $('exportBtn').classList.remove('visible');
 
       try {
         // Step 1: Get member list (paginated, all pages)
@@ -729,6 +746,9 @@
           uniqueShops,
           membersQueried: allMembers.length,
         });
+
+        // Show export button
+        $('exportBtn').classList.add('visible');
 
         renderTable(filteredLogs);
 
@@ -840,7 +860,7 @@
               <th style="text-align:right">赠金消耗</th>
               <th style="text-align:right">消费前余额</th>
               <th style="text-align:right">消费后余额</th>
-              <th>订单ID</th>
+              <th>订单编号</th>
             </tr>
           </thead>
           <tbody>
@@ -885,6 +905,40 @@
       pagination.pageSize = Number(size);
       pagination.currentPage = 1;
       _renderPage();
+    }
+
+    function exportCSV() {
+      if (!_allLogs.length) return;
+      const headers = ['消费时间', '会员姓名', '会员手机', '消费门店', '消费金额(分)', '本金消耗(分)', '赠金消耗(分)', '消费前余额(分)', '消费后余额(分)', '订单编号'];
+      const BOM = '\uFEFF';
+      const rows = _allLogs.map(log => {
+        const chargeSend = Number(log.chargeSend) || 0;
+        const afterBalance = Number(log.afterChargeSend) || 0;
+        const preBalance = afterBalance - chargeSend;
+        return [
+          log.createdAt || '',
+          log.memberName || '',
+          log.memberMobile || '',
+          log.shopName || '',
+          chargeSend,
+          Number(log.charge) || 0,
+          Number(log.send) || 0,
+          preBalance,
+          afterBalance,
+          log.orderId || '',
+        ].map(v => {
+          const s = String(v);
+          return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+        }).join(',');
+      });
+      const csv = BOM + [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `夸父会员储值消费明细_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     // ===== Event Bindings =====
