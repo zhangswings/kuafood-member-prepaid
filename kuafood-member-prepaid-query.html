@@ -757,6 +757,7 @@
         const charge = Number(log.charge) || 0;
         const send = Number(log.send) || 0;
         const afterBalance = Number(log.afterChargeSend) || 0;
+        const preBalance = afterBalance + chargeSend;
         const orderId = log.orderId && Number(log.orderId) > 0 ? log.orderId : '';
 
         return `
@@ -767,6 +768,7 @@
             <td class="num neg">${formatMoney(chargeSend)}</td>
             <td class="num neg">${formatMoney(charge)}</td>
             <td class="num neg">${formatMoney(send)}</td>
+            <td class="num">${formatMoney(preBalance)}</td>
             <td class="num">${formatMoney(afterBalance)}</td>
             <td style="font-size:12px;">${orderId ? `<a href="https://b.kuafood.com/operation/order/detail/${orderId}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${orderId}</a>` : ''}</td>
           </tr>
@@ -783,6 +785,7 @@
               <th style="text-align:right">消费金额</th>
               <th style="text-align:right">本金消耗</th>
               <th style="text-align:right">赠金消耗</th>
+              <th style="text-align:right">消费前余额</th>
               <th style="text-align:right">消费后余额</th>
               <th>订单ID</th>
             </tr>
