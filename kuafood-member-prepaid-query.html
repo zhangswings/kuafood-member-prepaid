@@ -733,7 +733,7 @@
     function formatMoney(cents) {
       const n = Number(cents) || 0;
       const abs = Math.abs(n);
-      const sign = n < 0 ? '-' : n > 0 ? '+' : '';
+      const sign = n < 0 ? '-' : '';
       const yuan = (abs / 100).toFixed(2);
       return sign + '¥' + yuan;
     }
@@ -757,7 +757,7 @@
         const charge = Number(log.charge) || 0;
         const send = Number(log.send) || 0;
         const afterBalance = Number(log.afterChargeSend) || 0;
-        const preBalance = afterBalance + chargeSend;
+        const preBalance = afterBalance - chargeSend; // chargeSend is negative for consumption
         const orderId = log.orderId && Number(log.orderId) > 0 ? log.orderId : '';
 
         return `
