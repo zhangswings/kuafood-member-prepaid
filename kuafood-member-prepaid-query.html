@@ -910,7 +910,7 @@
 
     function exportCSV() {
       if (!_allLogs.length) return;
-      const headers = ['消费时间', '会员姓名', '会员手机', '消费门店', '消费金额(分)', '本金消耗(分)', '赠金消耗(分)', '消费前余额(分)', '消费后余额(分)', '订单编号'];
+      const headers = ['消费时间', '会员姓名', '会员手机', '消费门店', '消费金额', '本金消耗', '赠金消耗', '消费前余额', '消费后余额', '订单编号'];
       const BOM = '\uFEFF';
       const rows = _allLogs.map(log => {
         const chargeSend = Number(log.chargeSend) || 0;
@@ -921,11 +921,11 @@
           log.memberName || '',
           log.memberMobile || '',
           log.shopName || '',
-          chargeSend,
-          Number(log.charge) || 0,
-          Number(log.send) || 0,
-          preBalance,
-          afterBalance,
+          (chargeSend / 100).toFixed(2),
+          ((Number(log.charge) || 0) / 100).toFixed(2),
+          ((Number(log.send) || 0) / 100).toFixed(2),
+          (preBalance / 100).toFixed(2),
+          (afterBalance / 100).toFixed(2),
           log.orderId || '',
         ].map(v => {
           const s = String(v);
