@@ -175,7 +175,7 @@
     .summary-grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
     }
     .summary-card {
       background: var(--soft);
@@ -773,12 +773,12 @@
           <div class="value">${stats.totalRecords.toLocaleString()}</div>
         </div>
         <div class="summary-card">
-          <div class="label">消费总金额（含赠送）</div>
-          <div class="value" style="color:var(--bad)">-¥${(stats.totalAmount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="label">消费总金额（本金）</div>
+          <div class="value" style="color:var(--bad)">-¥${(stats.totalChargeConsumed / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div class="summary-card">
-          <div class="label">本金消耗 / 赠金消耗</div>
-          <div class="value">¥${(stats.totalChargeConsumed / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ¥${(stats.totalSendConsumed / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+          <div class="label">消费总金额（赠金）</div>
+          <div class="value" style="color:var(--bad)">-¥${(stats.totalSendConsumed / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div class="summary-card">
           <div class="label">涉及会员 / 门店</div>
